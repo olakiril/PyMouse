@@ -17,10 +17,10 @@ class SetupControl(dj.Lookup):
     #
     setup                : varchar(256)                 # Setup name
     ---
+    ->Protocol
     ip                   : varchar(16)                  # setup IP address
     status="ready"       : enum('ready','running','stop','sleeping','offtime','exit') 
     animal_id=null       : int                          # animal id
-    task_idx=null        : int                          # task identification number
     last_ping            : timestamp                    
     notes=null           : varchar(256)                 
     current_session=null : int                          
@@ -30,12 +30,12 @@ class SetupControl(dj.Lookup):
     """
 
 @ExpSchema
-class Task(dj.Lookup):
+class Protocol(dj.Lookup):
     definition = """
     # Behavioral experiment parameters
-    task_idx             : int                          # task identification number
+    protocol_idx         : int                          # task identification number
     ---
-    protocol             : varchar(4095)                # stimuli to be presented (array of dictionaries)
+    protocol_file        : varchar(4095)                # stimuli to be presented (array of dictionaries)
     description=""       : varchar(2048)                # task description
     timestamp            : timestamp    
     """
@@ -48,12 +48,11 @@ class Session(dj.Manual):
     session              : smallint                     # session number
     ---
     setup=null           : varchar(256)                 # computer id
-    session_tmst         : timestamp                    # session timestamp
     notes=null           : varchar(2048)                # session notes
     session_params=null  : mediumblob                   
-    conditions=null      : mediumblob      
     protocol=null        : varchar(256)                 # protocol file
-    experiment_type=null : varchar(256)                 
+    experiment_type=null : varchar(256)            
+    session_tmst         : timestamp                    # session timestamp     
     """
 
 @ExpSchema
@@ -95,7 +94,7 @@ class Lick(dj.Manual):
     # Lick timestamps
     -> Session
     time	          	: int           	            # time from session start (ms)
-    probe               : int                           # probe number
+    port                : int                           # port number
     """
 
 
@@ -134,11 +133,11 @@ class Odor(dj.Manual):
         definition = """
         # odor conditions
         -> Odor
-        odor_id              : int                      # odor index for odor identity
+        odorant_id           : int                      # index for odorant identity
         ---
-        odor_duration        : int                      # odor duration (ms)
+        duration             : int                      # odor duration (ms)
         delivery_channel     : int                      # delivery idx for channel mapping
-        dutycycle            : int                      # odor dutycycle
+        mix            : int                      # odorant ratio in the mixture(0-100)
         """
 
     class Trial(dj.Part):
