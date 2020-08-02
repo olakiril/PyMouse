@@ -12,6 +12,17 @@ def erd():
 
 
 @ExpSchema
+class Protocol(dj.Lookup):
+    definition = """
+    # Behavioral experiment parameters
+    protocol_idx         : int                          # task identification number
+    ---
+    protocol_file        : varchar(4095)                # stimuli to be presented (array of dictionaries)
+    description=""       : varchar(2048)                # task description
+    timestamp            : timestamp    
+    """
+
+@ExpSchema
 class SetupControl(dj.Lookup):
     definition = """
     #
@@ -27,17 +38,6 @@ class SetupControl(dj.Lookup):
     last_trial=null      : int                          
     total_liquid=null    : float     
     state=null           : varchar(256)  
-    """
-
-@ExpSchema
-class Protocol(dj.Lookup):
-    definition = """
-    # Behavioral experiment parameters
-    protocol_idx         : int                          # task identification number
-    ---
-    protocol_file        : varchar(4095)                # stimuli to be presented (array of dictionaries)
-    description=""       : varchar(2048)                # task description
-    timestamp            : timestamp    
     """
 
 @ExpSchema
