@@ -4,7 +4,7 @@ experiment = dj.create_virtual_module('experiment.py', 'test_experiment', create
 behavior = dj.create_virtual_module('behavior.py', 'test_behavior', create_tables=True)
 stimulus = dj.create_virtual_module('stimulus.py', 'test_stimuli', create_tables=True)
 mice = dj.create_virtual_module('mice.py', 'lab_mice')
-common = dj.create_virtual_module('mice.py', 'lab_common')
+common = dj.create_virtual_module('common.py', 'lab_common')
 
 @experiment.schema
 class Protocol(dj.Lookup):
@@ -80,19 +80,20 @@ class Trial(dj.Manual):
     -> Condition
     start_time           : int                          # start time from session start (ms)
     end_time             : int                          # end time from session start (ms)
-    aborted              : boolean                      # aborted flag
+    aborted=0           : binary                       # aborted flag
     """
 
 
 
 @behavior.schema
-class CenterPort(dj.Manual):
+class PortState(dj.Manual):
     definition = """
     # Center port information
     -> Session
     time	     	     : int                      	# time from session start (ms)
+    port=0               : tinyint                      # port number
     ---
-    in_position          : boolean
+    state=1              : binary
     """
 
 @behavior.schema
@@ -100,9 +101,10 @@ class Lick(dj.Manual):
     definition = """
     # Lick timestamps
     -> Session
-    time	          	: int           	            # time from session start (ms)
-    port                : int                           # port number
+    time	             : int           	            # time from session start (ms)
+    port                 : tinyint                      # port number
     """
+
 
 @stimulus.schema
 class MovieClass(dj.Lookup):
@@ -125,8 +127,8 @@ class Movie(dj.Lookup):
     codec="-c:v libx264 -preset slow -crf 5": varchar(255)
     movie_description                       : varchar(255)  # full movie title
     frame_rate=30                           : float         # frames per second
-    frame_width=256                         : int           # pixels
-    frame_height=144                        : int           # pixels
+    frame_width=256                         : smallint      # pixels
+    frame_height=144                        : smallint      # pixels
     """
     class Clip(dj.Part):
         definition = """
