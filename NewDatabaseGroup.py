@@ -108,6 +108,12 @@ class Lick(dj.Manual):
     port                : int                           # port number
     """
 
+@stimulus.schema
+class MovieClass(dj.Lookup):
+    definition = """
+    # types of movies
+    movie_class          : varchar(16)      
+    """
 
 @stimulus.schema
 class Movie(dj.Lookup):
@@ -115,7 +121,7 @@ class Movie(dj.Lookup):
     # movies used for generating clips
     movie_name                              : char(8)       # short movie title
     ---
-    -> stim.MovieClass
+    -> MovieClass
     path                                    : varchar(255)
     original_file                           : varchar(255)
     file_template                           : varchar(255)  # filename template with full path
