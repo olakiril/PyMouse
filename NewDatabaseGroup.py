@@ -135,7 +135,7 @@ class Movie(dj.Lookup):
     class Clip(dj.Part):
         definition = """
         # clips from movies
-        -> stim.Movie
+        -> Movie
         clip_number                        : smallint       # clip index
         ---
         file_name                          : varchar(255)   # full file name
