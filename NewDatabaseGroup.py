@@ -68,7 +68,7 @@ class Session(dj.Manual):
         -> Session
         ---
         -> Protocol              
-        protocol=null        : text                     # protocol text
+        protocol=null        : blob                     # protocol file
         session_params=null  : blob                     # parameters for the session
         experiment_type=null : varchar(256)             
         git_version=null     : varchar(7)               # git short hash     
