@@ -8,7 +8,8 @@ experiment = create_virtual_module('experiment.py', 'test_experiment', create_ta
 behavior = create_virtual_module('behavior.py', 'test_behavior', create_tables=True)
 stimulus = create_virtual_module('stimulus.py', 'test_stimuli', create_tables=True)
 
-Mice = dj.create_virtual_module('mice.py', 'lab_mice')
+mice = dj.create_virtual_module('mice.py', 'lab_mice')
+common = dj.create_virtual_module('mice.py', 'lab_common')
 
 @experiment.schema
 class Protocol(dj.Lookup):
@@ -58,7 +59,7 @@ class Session(dj.Manual):
     -> mice.Mice
     session              : smallint                     # session number
     ---
-    setup=null           : varchar(256)                 # computer id
+    -> common.Setup
     notes=null           : varchar(2048)                # session notes
     session_tmst         : timestamp                    # session timestamp     
     """
