@@ -1,9 +1,5 @@
 import datajoint as dj
 
-#ExpSchema = dj.schema('test_experiment')
-#BehSchema = dj.schema('test_behavior')
-#StimSchema = dj.schema('test_stimuli')
-
 experiment = dj.create_virtual_module('experiment.py', 'test_experiment', create_tables=True)
 behavior = dj.create_virtual_module('behavior.py', 'test_behavior', create_tables=True)
 stimulus = dj.create_virtual_module('stimulus.py', 'test_stimuli', create_tables=True)
@@ -25,7 +21,7 @@ class Protocol(dj.Lookup):
 class Control(dj.Lookup):
     definition = """
     #
-    setup                : varchar(256)                 # Setup name
+    setup                : varchar(64)                 # Setup name
     ---
     ->Protocol
     ip                   : varchar(16)                  # setup IP address
@@ -58,7 +54,7 @@ class Session(dj.Manual):
     -> mice.Mice
     session              : smallint                     # session number
     ---
-    -> common.Setup
+    setup                : varchar(64)                  # Setup name
     notes=null           : varchar(2048)                # session notes
     session_tmst         : timestamp                    # session timestamp     
     """
