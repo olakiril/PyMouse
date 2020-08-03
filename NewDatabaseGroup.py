@@ -146,7 +146,7 @@ class Clip(dj.Manual):
     # movie clip conditions
     mov_hash             : char(24)                     # unique condition hash
     ---
-    -> Clip
+    -> Movie.Clip
     movie_duration       : smallint                     # movie duration
     skip_time            : smallint                     # start time in clip
     static_frame         : smallint                     # static frame presentation
