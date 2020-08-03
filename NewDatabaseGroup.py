@@ -209,7 +209,7 @@ class Reward(dj.Manual):
 class LiquidCalibration(dj.Manual):
     definition = """
     # Liquid delivery calibration sessions for each probe
-    setup                        : varchar(256)         # Setup name
+    -> common.Setup
     port                         : smallint             # port number
     date                         : date                 # session date (only one per day is allowed)
     """
