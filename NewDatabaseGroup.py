@@ -4,10 +4,9 @@ import datajoint as dj
 #BehSchema = dj.schema('test_behavior')
 #StimSchema = dj.schema('test_stimuli')
 
-experiment = create_virtual_module('experiment.py', 'test_experiment', create_tables=True)
-behavior = create_virtual_module('behavior.py', 'test_behavior', create_tables=True)
-stimulus = create_virtual_module('stimulus.py', 'test_stimuli', create_tables=True)
-
+experiment = dj.create_virtual_module('experiment.py', 'test_experiment', create_tables=True)
+behavior = dj.create_virtual_module('behavior.py', 'test_behavior', create_tables=True)
+stimulus = dj.create_virtual_module('stimulus.py', 'test_stimuli', create_tables=True)
 mice = dj.create_virtual_module('mice.py', 'lab_mice')
 common = dj.create_virtual_module('mice.py', 'lab_common')
 
