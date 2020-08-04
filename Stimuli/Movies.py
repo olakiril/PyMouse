@@ -50,6 +50,7 @@ class Movies(Stimulus):
             self.unshow()
 
     def stop(self):
+        self.logger.log_stim()
         self.vid.close()
         self.unshow()
         self.isrunning = False

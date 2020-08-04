@@ -80,7 +80,7 @@ class Trial(dj.Manual):
     -> Condition
     start_time           : int                          # start time from session start (ms)
     end_time             : int                          # end time from session start (ms)
-    aborted=0           : binary                       # aborted flag
+    aborted=0            : tinyint                      # aborted flag
     """
 
 
@@ -93,7 +93,7 @@ class PortState(dj.Manual):
     time	     	     : int                      	# time from session start (ms)
     port=0               : tinyint                      # port number
     ---
-    state=1              : binary
+    state=1              : tinyint
     """
 
 @behavior.schema
@@ -164,6 +164,18 @@ class Clip(dj.Manual):
         """
 
 @stimulus.schema
+class OdorIdentity(dj.Lookup):
+    definition = """
+    # Odor identity information
+    odorant_id           : smallint                     # odor identity
+    ---
+    odorant_name=null    : varchar(128)                 # odor name
+    concentration=100    : int                          # odor concentration in prc
+    solvent=null         : varchar(255)                 
+    description=null     : varchar(256)       
+    """
+
+@stimulus.schema
 class Odor(dj.Manual):
     definition = """
     # odor conditions
@@ -173,16 +185,16 @@ class Odor(dj.Manual):
         definition = """
         # odor conditions
         -> Odor
-        odorant_id           : smallint                 # index for odorant identity
+        -> OdorIdentity
         ---
         duration             : smallint                 # odor duration (ms)
         delivery_channel     : smallint                 # delivery idx for channel mapping
-        mix                  : smallint                 # odorant ratio in the mixture(0-100)
+        mix                  : tinyint                  # odorant prc in the mixture
         """
     class Trial(dj.Part):
         definition = """
         # Stimulus onset timestamps
-        -> Trial
+        -> Trials
         ---
         -> Odor
         start_time          : int                        # start time from session start (ms)
@@ -213,16 +225,16 @@ class LiquidCalibration(dj.Manual):
     definition = """
     # Liquid delivery calibration sessions for each probe
     setup                        : varchar(64)          # Setup name
-    port                         : smallint             # port number
+    port                         : tinyint              # port number
     date                         : date                 # session date (only one per day is allowed)
     """
     class PulseWeight(dj.Part):
         definition = """
         # Data for volume per pulse duty cycle estimation
         -> LiquidCalibration
-        pulse_dur                : int                  # duration of pulse in ms
+        pulse_dur                : smallint             # duration of pulse in ms
         ---
-        pulse_num                : int                  # number of pulses
+        pulse_num                : smallint             # number of pulses
         weight                   : float                # weight of total liquid released in gr
         timestamp                : timestamp            # timestamp
         """

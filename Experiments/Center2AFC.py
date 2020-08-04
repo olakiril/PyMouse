@@ -33,6 +33,7 @@ class State(StateClass):
             'InterTrial'   : InterTrial(self),
             'Reward'       : Reward(self),
             'Punish'       : Punish(self),
+            'Abort'        : Abort(self),
             'Sleep'        : Sleep(self),
             'OffTime'      : OffTime(self),
             'Exit'         : exitState}
@@ -91,6 +92,7 @@ class Trial(State):
     def __init__(self, parent):
         self.__dict__.update(parent.__dict__)
         self.probe = 0
+        self.aborted = False
         self.trial_start = 0
         super().__init__()
 
@@ -112,7 +114,8 @@ class Trial(State):
 
     def next(self):
         if not self.is_ready and not self.resp_ready:                           # did not wait
-            return states['Punish']
+            self.aborted = True
+            return states['Abort']
         elif self.probe > 0 and self.resp_ready and not self.beh.is_correct(self.stim.curr_cond): # response to incorrect probe
             return states['Punish']
         elif self.probe > 0 and self.resp_ready and self.beh.is_correct(self.stim.curr_cond): # response to correct probe
@@ -123,7 +126,7 @@ class Trial(State):
             return states['Trial']
 
     def exit(self):
-        self.logger.log_trial()
+        self.logger.log_trial(self.aborted)
         self.logger.ping()
 
 
@@ -134,22 +137,6 @@ class PostTrial(State):
 
     def next(self):
         return states['InterTrial']
-
-
-class InterTrial(State):
-    def run(self):
-        if self.beh.is_licking() & self.params.get('nolick_intertrial'):
-            self.timer.start()
-
-    def next(self):
-        if self.is_sleep_time():
-            return states['Sleep']
-        elif self.beh.is_hydrated():
-            return states['OffTime']
-        elif self.timer.elapsed_time() >= self.stim.curr_cond['intertrial_duration']:
-            return states['PreTrial']
-        else:
-            return states['InterTrial']
 
 
 class Reward(State):
@@ -182,12 +169,42 @@ class Punish(State):
     def exit(self):
         self.stim.unshow()
 
+class Abort(State):
+    def entry(self):
+        self.stim.stop()
+        self.timer.start()
+        self.logger.update_state(self.__class__.__name__)
+        print('Aborted')
+
+    def run(self): pass
+
+    def next(self):
+        return states['InterTrial']
+
+    def exit(self):
+        self.stim.set_background()
+
+class InterTrial(State):
+    def run(self):
+        if self.beh.is_licking() & self.params.get('nolick_intertrial'):
+            self.timer.start()
+
+    def next(self):
+        if self.is_sleep_time():
+            return states['Sleep']
+        elif self.beh.is_hydrated():
+            return states['OffTime']
+        elif self.timer.elapsed_time() >= self.stim.curr_cond['intertrial_duration']:
+            return states['PreTrial']
+        else:
+            return states['InterTrial']
 
 class Sleep(State):
     def entry(self):
         self.logger.update_state(self.__class__.__name__)
         self.logger.update_setup_status('sleeping')
-        self.stim.unshow([0, 0, 0])
+        self.stim.set_background([0, 0, 0])
+        self.stim.set_intensity(0)
 
     def run(self):
         self.logger.ping()
@@ -210,7 +227,8 @@ class OffTime(State):
     def entry(self):
         self.logger.update_state(self.__class__.__name__)
         self.logger.update_setup_status('offtime')
-        self.stim.unshow([0, 0, 0])
+        self.stim.set_background([0, 0, 0])
+        self.stim.set_intensity(0)
 
     def run(self):
         self.logger.ping()

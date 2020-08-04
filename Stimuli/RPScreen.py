@@ -12,9 +12,6 @@ class RPScreen(Stimulus):
         # setup parameters
         self.size = (800, 480)     # window size
         self.color = [127, 127, 127]  # default background color
-        self.loc = (0, 0)          # default starting location of stimulus surface
-        self.fps = 30              # default presentation framerate
-        self.phd_size = (50, 50)    # default photodiode signal size in pixels
         self.set_intensity(self.params['intensity'])
 
         # setup pygame
@@ -37,11 +34,12 @@ class RPScreen(Stimulus):
     def present(self):
         pass
 
-    def stop(self):
-        self.unshow()
+    def stop(self, color=False):
+        self.logger.log_stim()
+        self.unshow(color)
         self.isrunning = False
 
-    def unshow(self, color=False):
+    def set_background(self, color=False):
         """update background color"""
         if not color:
             color = self.color

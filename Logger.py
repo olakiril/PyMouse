@@ -14,12 +14,12 @@ class Logger:
     """ This class handles the database logging"""
 
     def __init__(self):
-        self.last_trial = 0
+        self.curr_trial = 0
         self.queue = Queue()
         self.timer = Timer()
         self.trial_start = 0
         self.curr_cond = []
-        self.task_idx = []
+        self.protocol_idx = []
         self.session_key = dict()
         self.setup = socket.gethostname()
         self.lock = True
@@ -57,19 +57,19 @@ class Logger:
     def log_setup(self):
         key = dict(setup=self.setup)
         # update values in case they exist
-        if numpy.size((SetupControl() & dict(setup=self.setup)).fetch()):
-            key = (SetupControl() & dict(setup=self.setup)).fetch1()
-            (SetupControl() & dict(setup=self.setup)).delete_quick()
+        if numpy.size((Control() & dict(setup=self.setup)).fetch()):
+            key = (Control() & dict(setup=self.setup)).fetch1()
+            (Control() & dict(setup=self.setup)).delete_quick()
 
         # insert new setup
         key['ip'] = self.ip
         key['status'] = 'ready'
-        SetupControl().insert1(key)
+        Control().insert1(key)
 
     def log_session(self, session_params, exp_type=''):
-        animal_id, task_idx = (SetupControl() & dict(setup=self.setup)).fetch1('animal_id', 'task_idx')
-        self.task_idx = task_idx
-        self.last_trial = 0
+        animal_id, protocol_idx = (Control() & dict(setup=self.setup)).fetch1('animal_id', 'protocol_idx')
+        self.protocol_idx = protocol_idx
+        self.curr_trial = 0
 
         # create session key
         self.session_key = dict()
@@ -91,9 +91,9 @@ class Logger:
 
         # start session time
         self.timer.start()
-        (SetupControl() & dict(setup=self.setup))._update('current_session', self.session_key['session'])
-        (SetupControl() & dict(setup=self.setup))._update('last_trial', 0)
-        (SetupControl() & dict(setup=self.setup))._update('total_liquid', 0)
+        (Control() & dict(setup=self.setup))._update('current_session', self.session_key['session'])
+        (Control() & dict(setup=self.setup))._update('curr_trial', 0)
+        (Control() & dict(setup=self.setup))._update('total_liquid', 0)
 
     def log_conditions(self, conditions, condition_tables=['OdorCond', 'MovieCond', 'RewardCond']):
         # iterate through all conditions and insert
@@ -121,37 +121,41 @@ class Logger:
 
     def init_trial(self, cond_hash):
         self.curr_cond = cond_hash
+        self.curr_trial += 1
         if self.lock:
             self.thread_lock.acquire()
         # return trial start time
         self.trial_start = self.timer.elapsed_time()
+        self.trial_key = dict(self.session_key,
+                         trial_idx=self.curr_trial,
+                         cond_hash=self.curr_cond,
+                         start_time=self.trial_start)
+
         return self.trial_start
 
-    def log_trial(self, last_flip_count=0):
+    def init_stim(self, stim_table):
+        self.stim_start[stim_table] = self.timer.elapsed_time()
+
+    def log_trial(self, aborted=False):
+        timestamp = self.timer.elapsed_time()
+        self.queue.put(dict(table='Trial', tuple=dict(self.trial_key, end_time=timestamp, aborted=aborted)))
         if self.lock:
             self.thread_lock.release()
-        timestamp = self.timer.elapsed_time()
-        trial_key = dict(self.session_key,
-                         trial_idx=self.last_trial+1,
-                         cond_hash=self.curr_cond,
-                         start_time=self.trial_start,
-                         end_time=timestamp,
-                         last_flip_count=last_flip_count)
-        self.queue.put(dict(table='Trial', tuple=trial_key))
-        self.last_trial += 1
 
         # insert ping
-        self.queue.put(dict(table='SetupControl', tuple=dict(setup=self.setup),
-                            field='last_trial', value=self.last_trial, update=True))
+        self.queue.put(dict(table='Control', tuple=dict(setup=self.setup),
+                            field='curr_trial', value=self.curr_trial, update=True))
 
     def log_liquid(self, probe, reward_amount):
         timestamp = self.timer.elapsed_time()
         self.queue.put(dict(table='LiquidDelivery', tuple=dict(self.session_key, time=timestamp, probe=probe,
                                                                reward_amount=reward_amount)))
 
-    def log_stim(self):
+    def log_stim(self, stim_table):
         timestamp = self.timer.elapsed_time()
-        self.queue.put(dict(table='StimOnset', tuple=dict(self.session_key, time=timestamp)))
+        self.queue.put(dict(table=stim_table, tuple=dict(self.trial_key,
+                                                          start_time=self.stim_start[stim_table],
+                                                          end_time=timestamp)))
 
     def log_lick(self, probe):
         timestamp = self.timer.elapsed_time()
@@ -181,40 +185,40 @@ class Logger:
                                                             state=state)))
 
     def update_setup_status(self, status):
-        key = (SetupControl() & dict(setup=self.setup)).fetch1()
+        key = (Control() & dict(setup=self.setup)).fetch1()
         in_status = key['status'] == status
         if not in_status:
-            (SetupControl() & dict(setup=self.setup))._update('status', status)
+            (Control() & dict(setup=self.setup))._update('status', status)
         return in_status
 
     def update_setup_notes(self, note):
-        self.queue.put(dict(table='SetupControl', tuple=dict(setup=self.setup),
+        self.queue.put(dict(table='Control', tuple=dict(setup=self.setup),
                             field='notes', value=note, update=True))
 
     def update_state(self, state):
-        self.queue.put(dict(table='SetupControl', tuple=dict(setup=self.setup),
+        self.queue.put(dict(table='Control', tuple=dict(setup=self.setup),
                             field='state', value=state, update=True))
 
     def update_animal_id(self, animal_id):
-        (SetupControl() & dict(setup=self.setup))._update('animal_id', animal_id)
+        (Control() & dict(setup=self.setup))._update('animal_id', animal_id)
 
-    def update_task_idx(self, task_idx):
-        (SetupControl() & dict(setup=self.setup))._update('task_idx', task_idx)
+    def update_protocol_idx(self, protocol_idx):
+        (Control() & dict(setup=self.setup))._update('protocol_idx', protocol_idx)
 
     def update_total_liquid(self, total_rew):
-        self.queue.put(dict(table='SetupControl', tuple=dict(setup=self.setup),
+        self.queue.put(dict(table='Control', tuple=dict(setup=self.setup),
                             field='total_liquid', value=total_rew, update=True))
 
     def update_difficulty(self, difficulty):
-        self.queue.put(dict(table='SetupControl', tuple=dict(setup=self.setup),
+        self.queue.put(dict(table='Control', tuple=dict(setup=self.setup),
                             field='difficulty', value=difficulty, update=True))
 
     def update_setup_info(self, field, value):
-        self.queue.put(dict(table='SetupControl', tuple=dict(setup=self.setup),
+        self.queue.put(dict(table='Control', tuple=dict(setup=self.setup),
                             field=field, value=value, update=True))
 
     def get_setup_info(self, field):
-        info = (SetupControl() & dict(setup=self.setup)).fetch1(field)
+        info = (Control() & dict(setup=self.setup)).fetch1(field)
         return info
 
     def get_session_key(self):
@@ -225,8 +229,8 @@ class Logger:
         return clip_info
 
     def get_protocol(self):
-        task_idx = (SetupControl() & dict(setup=self.setup)).fetch1('task_idx')
-        protocol = (Task() & dict(task_idx=task_idx)).fetch1('protocol')
+        protocol_idx = (Control() & dict(setup=self.setup)).fetch1('protocol_idx')
+        protocol = (Task() & dict(protocol_idx=protocol_idx)).fetch1('protocol')
         path, filename = os.path.split(protocol)
         if not path:
             path = pathlib.Path(__file__).parent.absolute()
@@ -235,9 +239,9 @@ class Logger:
 
     def ping(self):
         lp = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-        self.queue.put(dict(table='SetupControl', tuple=dict(setup=self.setup),
+        self.queue.put(dict(table='Control', tuple=dict(setup=self.setup),
                             field='last_ping', value=lp, update=True))
-        self.queue.put(dict(table='SetupControl', tuple=dict(setup=self.setup),
+        self.queue.put(dict(table='Control', tuple=dict(setup=self.setup),
                             field='queue_size', value=self.queue.qsize(), update=True))
 
 
