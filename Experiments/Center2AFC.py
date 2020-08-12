@@ -16,10 +16,6 @@ class State(StateClass):
         self.beh = BehaviorClass(self.logger, session_params)
         self.stim = StimulusClass(self.logger, session_params, conditions, self.beh)
         self.params = session_params
-        self.logger.log_conditions(conditions, self.stim.get_condition_tables())
-
-        logger.update_setup_info('start_time', session_params['start_time'])
-        logger.update_setup_info('stop_time', session_params['stop_time'])
 
         exitState = Exit(self)
         self.StateMachine = StateMachine(Prepare(self), exitState)
@@ -39,8 +35,8 @@ class State(StateClass):
             'Exit'         : exitState}
 
     def entry(self):  # updates stateMachine from Database entry - override for timing critical transitions
-        self.StateMachine.status = self.logger.get_setup_info('status')
-        self.logger.update_state(self.__class__.__name__)
+        self.StateMachine.status = self.logger.setup_status
+        self.logger.update_setup_info('state', type(self).__name__)
 
     def run(self):
         self.StateMachine.run()
@@ -71,7 +67,7 @@ class PreTrial(State):
         self.stim.prepare()
         self.beh.prepare(self.stim.curr_cond)
         self.timer.start()
-        self.logger.update_state(self.__class__.__name__)
+        self.logger.update_setup_info('state', type(self).__name__)
 
     def run(self): pass
 
@@ -83,26 +79,20 @@ class PreTrial(State):
         else:
             if self.timer.elapsed_time() > 5000: # occasionally get control status
                 self.timer.start()
-                self.StateMachine.status = self.logger.get_setup_info('status')
+                self.StateMachine.status = self.logger.setup_status
                 self.logger.ping()
             return states['PreTrial']
 
 
 class Trial(State):
-    def __init__(self, parent):
-        self.__dict__.update(parent.__dict__)
+    def entry(self):
         self.probe = 0
         self.aborted = False
-        self.trial_start = 0
-        super().__init__()
-
-    def entry(self):
         self.is_ready = True
         self.resp_ready = False
-        self.logger.update_state(self.__class__.__name__)
         self.stim.init()
-        self.timer.start()  # trial start counter
         self.trial_start = self.logger.init_trial(self.stim.curr_cond['cond_hash'])
+        super().entry()
 
     def run(self):
         self.stim.present()  # Start Stimulus
@@ -154,8 +144,7 @@ class Punish(State):
         self.beh.punish()
         self.stim.stop()
         self.stim.unshow([0, 0, 0])
-        self.timer.start()
-        self.logger.update_state(self.__class__.__name__)
+        super().entry()
         print('Punishing')
 
     def run(self): pass
@@ -172,8 +161,7 @@ class Punish(State):
 class Abort(State):
     def entry(self):
         self.stim.stop()
-        self.timer.start()
-        self.logger.update_state(self.__class__.__name__)
+        super().entry()
         print('Aborted')
 
     def run(self): pass
@@ -201,8 +189,8 @@ class InterTrial(State):
 
 class Sleep(State):
     def entry(self):
-        self.logger.update_state(self.__class__.__name__)
-        self.logger.update_setup_status('sleeping')
+        super().entry()
+        self.logger.update_setup_info('status','sleeping')
         self.stim.set_background([0, 0, 0])
         self.stim.set_intensity(0)
 
@@ -211,13 +199,13 @@ class Sleep(State):
         time.sleep(5)
 
     def next(self):
-        if self.logger.get_setup_info('status') == 'stop':  # if wake up then update session
+        if self.logger.setup_status == 'stop':  # if wake up then update session
             return states['Exit']
-        elif self.logger.get_setup_info('status') == 'wakeup' and not self.is_sleep_time():
-            self.logger.update_setup_status('running')
+        elif self.logger.setup_status == 'wakeup' and not self.is_sleep_time():
+            self.logger.update_setup_info('status','running')
             return states['PreTrial']
-        elif self.logger.get_setup_info('status') == 'sleeping' and not self.is_sleep_time():  # if wake up then update session
-            self.logger.update_setup_status('running')
+        elif self.logger.setup_status == 'sleeping' and not self.is_sleep_time():  # if wake up then update session
+            self.logger.update_setup_info('status','running')
             return states['Exit']
         else:
             return states['Sleep']
@@ -225,8 +213,8 @@ class Sleep(State):
 
 class OffTime(State):
     def entry(self):
-        self.logger.update_state(self.__class__.__name__)
-        self.logger.update_setup_status('offtime')
+        super().entry()
+        self.logger.update_setup_info('status','offtime')
         self.stim.set_background([0, 0, 0])
         self.stim.set_intensity(0)
 
@@ -235,7 +223,7 @@ class OffTime(State):
         time.sleep(5)
 
     def next(self):
-        if self.logger.get_setup_info('status') == 'stop':  # if wake up then update session
+        if self.logger.setup_status == 'stop':  # if wake up then update session
             return states['Exit']
         elif self.is_sleep_time():
             return states['Sleep']

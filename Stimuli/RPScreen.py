@@ -6,7 +6,7 @@ class RPScreen(Stimulus):
     """ This class handles the presentation of Movies with an optimized library for Raspberry pi"""
 
     def get_condition_tables(self):
-        return ['RewardCond']
+        return ['Reward']
 
     def setup(self):
         # setup parameters

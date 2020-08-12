@@ -13,7 +13,7 @@ class Stimulus:
         # initilize parameters
         self.params = params
         self.logger = logger
-        self.conditions = conditions
+        self.conditions =  self.logger.log_conditions(conditions, self.get_condition_tables())
         self.beh = beh
         self.isrunning = False
         self.flip_count = 0
@@ -25,7 +25,7 @@ class Stimulus:
         self.difficulties = [cond['difficulty'] for cond in self.conditions]
         self.timer = Timer()
 
-    def get_condition_tables(self):
+    def log_conditions(self):
         """return condition tables"""
         pass
 
@@ -85,7 +85,7 @@ class Stimulus:
                     self.curr_difficulty += 1
                 elif perf < self.params['stair_down'] and self.curr_difficulty > min(self.difficulties):
                     self.curr_difficulty -= 1
-                self.logger.update_difficulty(self.curr_difficulty)
+                self.logger.update_setup_info('difficulty',self.curr_difficulty)
             else:
                 if self.beh.probe_history[-1:] > 0:
                     self.iter -= 1
@@ -101,7 +101,7 @@ class Stimulus:
                     self.curr_difficulty += 1
                 elif perf < self.params['stair_down'] and self.curr_difficulty > min(self.difficulties):
                     self.curr_difficulty -= 1
-                self.logger.update_difficulty(self.curr_difficulty)
+                self.logger.update_setup_info('difficulty',self.curr_difficulty)
             else:
                 self.iter -= 1
             selected_conditions = [i for (i, v) in zip(self.conditions,

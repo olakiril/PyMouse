@@ -7,7 +7,7 @@ class Movies(Stimulus):
     """ This class handles the presentation of Movies"""
 
     def get_condition_tables(self):
-        return ['MovieCond', 'RewardCond']
+        return ['Clip', 'Reward']
 
     def setup(self):
         # setup parameters

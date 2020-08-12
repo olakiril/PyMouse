@@ -7,7 +7,7 @@ class SmellyMovies(RPMovies, Odors):
     """ This class handles the presentation of Visual (movies) and Olfactory (odors) stimuli"""
 
     def get_condition_tables(self):
-        return ['MovieCond', 'OdorCond', 'RewardCond']
+        return ['Clip', 'Odor', 'Reward']
   
     def init(self):
         delivery_port = self.curr_cond['delivery_port']

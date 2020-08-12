@@ -5,8 +5,15 @@ from time import sleep
 class RPMovies(RPScreen):
     """ This class handles the presentation of Movies with an optimized library for Raspberry pi"""
 
-    def get_condition_tables(self):
-        return ['MovieCond', 'RewardCond']
+
+    def log_conditions(self, conds):
+        params = ['clip_number',
+                  'movie_duration',
+                  'skip_time',
+                  'static_frame']
+        for key in conds:
+            res = dict((k, key[k]) for k in params if k in key)
+            self.logger.log
 
     def setup(self):
         # setup parameters

@@ -61,7 +61,7 @@ class Behavior:
     def update_history(self, probe=np.nan, reward=np.nan):
         self.probe_history = np.append(self.probe_history, probe)
         self.reward_history = np.append(self.reward_history, reward)
-        self.logger.update_total_liquid(np.nansum(self.reward_history))
+        self.logger.update_setup_info('total_liquid',(np.nansum(self.reward_history))
 
     def prepare(self, condition):
         pass

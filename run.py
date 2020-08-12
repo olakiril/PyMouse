@@ -7,23 +7,22 @@ else:
     from utils.Start import Welcome
 
 global logger
-logger = Logger()                                                   # setup logger & timer
-logger.log_setup()                                                  # publish IP and make setup available
+logger = Logger()                                                   # setup logger,publish IP and make setup available
 
 # # # # Waiting for instructions loop # # # # #
-while not logger.get_setup_info('status') == 'exit':
-    if logger.get_setup_info('status') == 'ready':
+while not logger.setup_status == 'exit':
+    if logger.setup_status == 'ready':
         interface = Welcome(logger)
-        while logger.get_setup_info('status') != 'running' and logger.get_setup_info('status') != 'exit': # wait for remote start
+        while logger.setup_status != 'running' and logger.setup_status != 'exit': # wait for remote start
             interface.eval_input()
             time.sleep(0.5)
             logger.ping()
         interface.close()
-    if logger.get_setup_info('status') == 'running':   # run experiment unless stopped
+    if logger.setup_status == 'running':   # run experiment unless stopped
         protocol = logger.get_protocol()
         exec(open(protocol).read())
-        if logger.get_setup_info('status') == 'stop':
-            logger.update_setup_status('ready')                            # update setup status
+        if logger.setup_status == 'stop':
+            logger.update_setup_info('status','ready')                            # update setup status
 
 
 # # # # # Exit # # # # #
