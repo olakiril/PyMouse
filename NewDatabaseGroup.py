@@ -239,3 +239,28 @@ class LiquidCalibration(dj.Manual):
         timestamp                : timestamp            # timestamp
         """
 
+@stimulus.schema
+class Scene(dj.Manual):
+    definition = """
+    # scene conditions
+    scene_hash                : char(24)                 # unique condition hash
+    environment               : tinyblob
+    """
+    class Object(dj.Part):
+        definition = """
+        # odor conditions
+        -> Odor
+        -> ObjectIdentity
+        ---
+        params                 : tinyblob                 # object parameters
+        """
+
+    class Trial(dj.Part):
+        definition = """
+        # Stimulus onset timestamps
+        -> Trials
+        ---
+        -> Scene
+        start_time          : int                        # start time from session start (ms)
+        end_time            : int                        # end time from session start (ms)
+        """

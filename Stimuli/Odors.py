@@ -4,8 +4,14 @@ from Stimulus import *
 class Odors(Stimulus):
     """ This class handles the presentation of Odors"""
 
-    def get_condition_tables(self):
+    def log_conditios(self):
         return ['Odor', 'Reward']
+        for idx, port in enumerate(cond['delivery_port']):
+            key = {'cond_hash': cond['cond_hash'],
+                   'dutycycle': cond['dutycycle'][idx],
+                   'odor_id': cond['odor_id'][idx],
+                   'delivery_port': port}
+            self.queue.put(dict(table=condtable + '.Port', tuple=key))
 
     def setup(self):
         # setup parameters

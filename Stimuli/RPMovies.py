@@ -14,6 +14,7 @@ class RPMovies(RPScreen):
         for key in conds:
             res = dict((k, key[k]) for k in params if k in key)
             self.logger.log
+        return conds
 
     def setup(self):
         # setup parameters
