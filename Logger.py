@@ -18,7 +18,7 @@ class Logger:
         self.timer = Timer()
         self.trial_start = 0
         self.curr_cond = []
-        self.session_key = dict()
+        self.session_key = dict
         self.setup = socket.gethostname()
         self.lock = True
         self.setup_status = 'ready'
